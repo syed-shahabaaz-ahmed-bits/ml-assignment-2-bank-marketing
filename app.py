@@ -36,57 +36,24 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+# Theme-safe CSS: no forced dark text colors (breaks Streamlit dark mode).
 st.markdown(
     """
     <style>
       .block-container {
         padding-top: 2rem;
         padding-bottom: 2.5rem;
-        padding-left: 2rem;
-        padding-right: 2rem;
         max-width: 1120px;
       }
-      [data-testid="stSidebar"] { background: #f7f9fb; }
-      [data-testid="stSidebar"] .block-container { padding-top: 1.5rem; }
-      h1 {
-        font-size: 1.85rem !important;
-        letter-spacing: -0.02em;
-        margin-bottom: 0.35rem !important;
-        color: #14212b;
-      }
-      h2, h3 {
-        color: #1f2d3a !important;
-        margin-top: 0.35rem !important;
-      }
       div[data-testid="stMetric"] {
-        background: #f4f7f9;
-        border: 1px solid #e3ebf0;
+        background: rgba(128, 128, 128, 0.10);
+        border: 1px solid rgba(128, 128, 128, 0.22);
         border-radius: 10px;
         padding: 0.85rem 0.9rem 0.7rem 0.9rem;
       }
-      div[data-testid="stMetricValue"] { font-size: 1.28rem; color: #0f1c24; }
-      div[data-testid="stMetricLabel"] { font-size: 0.82rem; color: #5b6b75; }
-      .subtitle {
-        color: #5c6b73;
-        font-size: 0.98rem;
-        line-height: 1.5;
-        margin: 0 0 1.35rem 0;
-      }
-      .meta-row {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.55rem;
-        margin: 0.25rem 0 1.4rem 0;
-      }
-      .meta-chip {
-        background: #eef4f7;
-        color: #243542;
-        border: 1px solid #d7e3ea;
-        border-radius: 999px;
-        padding: 0.28rem 0.75rem;
-        font-size: 0.82rem;
-      }
-      .section-gap { height: 0.85rem; }
+      div[data-testid="stMetricValue"] { font-size: 1.28rem; }
+      div[data-testid="stMetricLabel"] { font-size: 0.82rem; opacity: 0.85; }
+      .section-gap { height: 0.75rem; }
     </style>
     """,
     unsafe_allow_html=True,
@@ -101,23 +68,22 @@ def load_model(path: Path):
 
 
 with st.sidebar:
-    st.markdown("### Controls")
-    st.caption("Upload labeled test data and pick a trained model.")
-    st.write("")
-    uploaded = st.file_uploader("Test CSV (features + `y`)", type=["csv"])
-    st.write("")
+    st.header("Controls")
+    st.caption("Upload labeled test data and choose a trained model.")
+    uploaded = st.file_uploader(
+        "Test CSV (must include target column y)",
+        type=["csv"],
+    )
     model_name = st.selectbox("Model", list(MODEL_FILENAMES.keys()))
     st.caption(MODEL_BLURBS.get(model_name, ""))
-    st.write("")
-    st.markdown("---")
-    st.caption("Recommended file: `data/test_data.csv` from this repository.")
+    st.divider()
+    st.caption("Recommended upload: data/test_data.csv from this repository.")
 
 st.title("Bank Term Deposit Subscription Predictor")
-st.markdown(
-    '<p class="subtitle">Binary classification on the UCI Bank Marketing dataset. '
-    "Models were trained without <code>duration</code> (call-length leakage). "
-    "All six metrics below are computed live on your uploaded CSV.</p>",
-    unsafe_allow_html=True,
+st.write(
+    "Binary classification on the UCI Bank Marketing dataset. "
+    "Models were trained without the duration feature (call-length leakage). "
+    "All six metrics below are computed live on your uploaded CSV."
 )
 
 if uploaded is None:
@@ -168,20 +134,17 @@ except Exception as exc:
 
 n_rows = len(y_true)
 pos_rate = float(np.mean(y_true)) * 100
-st.markdown(
-    f"""
-    <div class="meta-row">
-      <span class="meta-chip">Model: {model_name}</span>
-      <span class="meta-chip">Rows evaluated: {n_rows:,}</span>
-      <span class="meta-chip">Positive rate (yes): {pos_rate:.1f}%</span>
-      <span class="meta-chip">Features: {X.shape[1]}</span>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
 
-st.subheader("Live evaluation metrics")
+m1, m2, m3, m4 = st.columns(4)
+m1.metric("Model", model_name.split()[0] if " " in model_name else model_name)
+m2.metric("Rows evaluated", f"{n_rows:,}")
+m3.metric("Positive rate (yes)", f"{pos_rate:.1f}%")
+m4.metric("Features", f"{X.shape[1]}")
+# Show full model name under the truncated metric if needed
+st.caption(f"Selected model: {model_name}")
+
 st.markdown('<div class="section-gap"></div>', unsafe_allow_html=True)
+st.subheader("Live evaluation metrics")
 metric_cols = st.columns(6, gap="medium")
 labels = [
     ("Accuracy", "accuracy"),
@@ -198,16 +161,17 @@ if metrics["auc"] is None:
     st.warning("AUC is N/A because the uploaded file contains only one class.")
 
 st.markdown('<div class="section-gap"></div>', unsafe_allow_html=True)
-st.markdown("---")
-st.markdown('<div class="section-gap"></div>', unsafe_allow_html=True)
+st.divider()
 
 left, right = st.columns([1, 1.35], gap="large")
 
 with left:
     st.subheader("Confusion matrix")
-    st.caption("Actual rows vs predicted columns (`no` / `yes`).")
+    st.caption("Actual rows vs predicted columns (no / yes).")
     cm = confusion_matrix(y_true, y_pred)
-    fig, ax = plt.subplots(figsize=(3.15, 2.55), dpi=120)
+    # Light figure so annotations stay readable in both app themes
+    fig, ax = plt.subplots(figsize=(3.15, 2.55), dpi=120, facecolor="white")
+    ax.set_facecolor("white")
     sns.heatmap(
         cm,
         annot=True,
@@ -220,11 +184,11 @@ with left:
         linecolor="#d5dee5",
         xticklabels=["no", "yes"],
         yticklabels=["no", "yes"],
-        annot_kws={"size": 11},
+        annot_kws={"size": 11, "color": "#111111"},
     )
-    ax.set_xlabel("Predicted", fontsize=9)
-    ax.set_ylabel("Actual", fontsize=9)
-    ax.tick_params(labelsize=9)
+    ax.set_xlabel("Predicted", fontsize=9, color="#111111")
+    ax.set_ylabel("Actual", fontsize=9, color="#111111")
+    ax.tick_params(labelsize=9, colors="#111111")
     fig.tight_layout(pad=0.45)
     st.pyplot(fig, use_container_width=False)
     plt.close(fig)
@@ -244,15 +208,11 @@ with right:
     display_cols = [
         c for c in ["precision", "recall", "f1-score", "support"] if c in report_df.columns
     ]
-    st.dataframe(
-        report_df[display_cols].style.format(
-            {
-                "precision": "{:.3f}",
-                "recall": "{:.3f}",
-                "f1-score": "{:.3f}",
-                "support": "{:.0f}",
-            }
-        ),
-        use_container_width=True,
-        height=280,
-    )
+    # Plain dataframe (no Styler) for reliable contrast in dark/light themes
+    pretty = report_df[display_cols].copy()
+    for col_name in ["precision", "recall", "f1-score"]:
+        if col_name in pretty.columns:
+            pretty[col_name] = pretty[col_name].map(lambda x: f"{x:.3f}")
+    if "support" in pretty.columns:
+        pretty["support"] = pretty["support"].map(lambda x: f"{x:.0f}")
+    st.dataframe(pretty, use_container_width=True, height=280)
