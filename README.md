@@ -19,6 +19,9 @@ leaks post-call information.
 ## c. Github Repository Link
 https://github.com/syed-shahabaaz-ahmed-bits/ml-assignment-2-bank-marketing
 
+## Live Streamlit App
+https://ml-assignment-2-bank-marketing-e94wmeshzrywhnxycsanqc.streamlit.app/
+
 ## d. Models used
 Comparison on the held-out test set (same split as `data/test_data.csv`):
 
@@ -64,5 +67,7 @@ models; the displayed metrics should match the table in section **d. Models used
 (same held-out test split).
 
 ## Streamlit Cloud
-Deploy with entrypoint `app.py`. After deployment, upload `data/test_data.csv` to verify
-live metrics match the README table.
+Live app: https://ml-assignment-2-bank-marketing-e94wmeshzrywhnxycsanqc.streamlit.app/
+
+Deployed with entrypoint `app.py`. After opening the app, upload `data/test_data.csv` to
+verify live metrics match the README table.
