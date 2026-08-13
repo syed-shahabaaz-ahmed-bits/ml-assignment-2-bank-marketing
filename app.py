@@ -135,13 +135,11 @@ except Exception as exc:
 n_rows = len(y_true)
 pos_rate = float(np.mean(y_true)) * 100
 
-m1, m2, m3, m4 = st.columns(4)
-m1.metric("Model", model_name.split()[0] if " " in model_name else model_name)
-m2.metric("Rows evaluated", f"{n_rows:,}")
-m3.metric("Positive rate (yes)", f"{pos_rate:.1f}%")
-m4.metric("Features", f"{X.shape[1]}")
-# Show full model name under the truncated metric if needed
-st.caption(f"Selected model: {model_name}")
+st.markdown(f"**Selected model:** {model_name}")
+m1, m2, m3 = st.columns(3)
+m1.metric("Rows evaluated", f"{n_rows:,}")
+m2.metric("Positive rate (yes)", f"{pos_rate:.1f}%")
+m3.metric("Features used", f"{X.shape[1]}")
 
 st.markdown('<div class="section-gap"></div>', unsafe_allow_html=True)
 st.subheader("Live evaluation metrics")
